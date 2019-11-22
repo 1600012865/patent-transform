@@ -80,7 +80,11 @@ def extract_keywords(des, function_words):
         keywords.append(keywords_processing(des[i], function_words))
     return keywords
 
-
+def cut_off(matrix, thresh=0.02):
+    
+    matrix[matrix <= thresh] = 0
+    matrix = matrix / (1e-10 + matrix.sum(axis=1, keepdims=True))
+    return matrix
 
 if __name__ == '__main__':
 
@@ -118,4 +122,25 @@ if __name__ == '__main__':
             if len(set(tmp_sys_des) & set(tmp_patent_des)) > 0:
                 freq[tmp_sys_index, tmp_patent_index] += 1
 
+    raw_freq = freq.copy()
+    specify_freq = freq.copy()
+    hybrid_freq = freq.copy()
+
+    A = freq.sum(axis=0)
+    A_weight = A / (1e-10 + A.sum())
+
+    raw_freq = raw_freq / (1e-10 + raw_freq.sum(axis=0, keepdims=True))
+    raw_freq = raw_freq * A_weight.reshape(1, -1)
+    raw_freq = raw_freq / (1e-10 + raw_freq.sum(axis=1, keepdims=True))
+
+    specify_freq = specify_freq / (1e-10 + specify_freq.sum(axis=0, keepdims=True))
+    specify_freq = specify_freq / (1e-10 + specify_freq.sum(axis=1, keepdims=True))
+
+    hybrid_freq = hybrid_freq / (1e-10 + hybrid_freq.sum(axis=0, keepdims=True))
+    hybrid_freq = hybrid_freq * raw_freq
+    hybrid_freq = hybrid_freq / (1e-10 + hybrid_freq.sum(axis=1, keepdims=True))
+
+    raw_freq = cut_off(raw_freq)
+    specify_freq = cut_off(specify_freq)
+    hybrid_freq = cut_off(hybrid_freq)
     import ipdb; ipdb.set_trace()
